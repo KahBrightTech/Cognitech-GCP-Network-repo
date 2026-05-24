@@ -1,0 +1,143 @@
+# Example terraform.tfvars file demonstrating key-based cross-referencing
+# Copy this to terraform.tfvars and update with your values
+
+iam = {
+  project_id      = "cognitech-playground-dev"
+  organization_id = "123456789012"
+
+  # Step 1: Define custom roles with keys
+  custom_roles = {
+    "app_deployer" = {
+      # key = "app_deployer"  # Optional: defaults to map key if not specified
+      role_id     = "appDeployer"
+      title       = "Application Deployer"
+      description = "Custom role for deploying applications"
+      permissions = [
+        "compute.instances.create",
+        "compute.instances.start",
+        "compute.instances.stop",
+        "storage.objects.create"
+      ]
+      stage = "GA"
+    }
+    "network_viewer" = {
+      role_id     = "networkViewer"
+      title       = "Network Configuration Viewer"
+      description = "Read-only access to network configurations"
+      permissions = [
+        "compute.networks.get",
+        "compute.networks.list",
+        "compute.subnetworks.get",
+        "compute.subnetworks.list"
+      ]
+      stage = "GA"
+    }
+  }
+
+  # Step 2: Define service accounts with keys
+  service_accounts = {
+    "app_backend" = {
+      # key = "app_backend"  # Optional: defaults to map key if not specified
+      account_id   = "app-backend-sa"
+      display_name = "Backend Application Service Account"
+      description  = "Service account for backend application workloads"
+      project_id   = "cognitech-playground-dev"
+      disabled     = false
+    }
+    "ci_cd" = {
+      account_id   = "ci-cd-pipeline-sa"
+      display_name = "CI/CD Pipeline Service Account"
+      description  = "Service account for automated CI/CD deployments"
+      project_id   = "cognitech-playground-dev"
+      disabled     = false
+    }
+    "data_processor" = {
+      account_id   = "data-processor-sa"
+      display_name = "Data Processing Service Account"
+      description  = "Service account for data processing jobs"
+      project_id   = "cognitech-playground-dev"
+      disabled     = false
+    }
+  }
+
+  # Step 3: Assign roles using KEY REFERENCES
+  project_iam_bindings = {
+    # Example 1: Using role_key and member_keys for clean referencing
+    "custom_deployers" = {
+      project_id  = "cognitech-playground-dev"
+      role_key    = "app_deployer"                    # References custom_roles["app_deployer"]
+      member_keys = ["ci_cd", "app_backend"]          # References service_accounts keys
+    }
+
+    # Example 2: Mix key references with direct members
+    "compute_viewers" = {
+      project_id = "cognitech-playground-dev"
+      role       = "roles/compute.viewer"             # Standard GCP role
+      members = [
+        "user:dev-team@cognitechllc.org"              # Direct member
+      ]
+      member_keys = ["app_backend", "ci_cd"]          # Add SAs by key
+    }
+
+    # Example 3: Using custom role key directly in role field
+    "network_viewers_binding" = {
+      project_id  = "cognitech-playground-dev"
+      role        = "network_viewer"                  # References custom_roles["network_viewer"]
+      member_keys = ["app_backend"]
+      members = [
+        "user:platform-engineer@cognitechllc.org"
+      ]
+    }
+
+    # Example 4: Traditional approach still works
+    "storage_admins" = {
+      project_id = "cognitech-playground-dev"
+      role       = "roles/storage.admin"
+      members = [
+        "serviceAccount:data-processor-sa@cognitech-playground-dev.iam.gserviceaccount.com"
+      ]
+    }
+  }
+
+  # Step 4: Individual member assignments using KEY REFERENCES
+  project_iam_members = {
+    # Example 1: Using role_key and member_key
+    "backend_app_deployer" = {
+      project_id = "cognitech-playground-dev"
+      role_key   = "app_deployer"                     # References custom_roles["app_deployer"]
+      member_key = "app_backend"                      # References service_accounts["app_backend"]
+    }
+
+    # Example 2: Using custom role key in role field
+    "cicd_network_viewer" = {
+      project_id = "cognitech-playground-dev"
+      role       = "network_viewer"                   # References custom_roles["network_viewer"]
+      member_key = "ci_cd"                            # References service_accounts["ci_cd"]
+    }
+
+    # Example 3: Standard role with service account key
+    "data_processor_storage" = {
+      project_id = "cognitech-playground-dev"
+      role       = "roles/storage.admin"              # Standard role
+      member_key = "data_processor"                   # References service_accounts["data_processor"]
+    }
+
+    # Example 4: Traditional approach with direct values
+    "alice_viewer" = {
+      project_id = "cognitech-playground-dev"
+      role       = "roles/viewer"
+      member     = "user:alice@cognitechllc.org"
+    }
+
+    # Example 5: User with custom role key reference
+    "bob_custom_deployer" = {
+      project_id = "cognitech-playground-dev"
+      role_key   = "app_deployer"
+      member     = "user:bob@cognitechllc.org"
+    }
+  }
+
+  # Organization and folder IAM (empty for this example)
+  organization_iam_bindings = {}
+  folder_iam_bindings       = {}
+}

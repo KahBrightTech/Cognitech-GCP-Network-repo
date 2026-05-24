@@ -16,17 +16,37 @@ Infrastructure Manager is Google Cloud's fully managed service for deploying and
 ```
 deplyment-Infra-Manger/
 ├── README.md (this file)
-└── cognitechllc/
-    ├── Playground/
-    │   ├── deployment-config.yaml
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   ├── provider.tf
-    │   ├── outputs.tf
-    │   └── versions.tf
-    └── Preprod/
-        └── (similar structure)
+├── cognitechllc/
+│   ├── Environment-Config/        # Deployment configurations
+│   │   └── Playgroud/
+│   │       └── dev-project/
+│   │           ├── deployment-config.yaml
+│   │           └── deploy.ps1     # Auto-detects paths!
+│   └── Playground/                # Actual Terraform code
+│       └── dev-project/
+│           ├── main.tf
+│           ├── variables.tf
+│           ├── provider.tf
+│           ├── outputs.tf
+│           └── versions.tf
 ```
+
+## Quick Start - Auto-Detected Deployment
+
+The easiest way to deploy is using the `deploy.ps1` script, which automatically detects paths:
+
+```powershell
+# Navigate to your config directory
+cd deplyment-Infra-Manger\cognitechllc\Environment-Config\Playgroud\dev-project
+
+# Deploy (automatically finds Terraform code at Playground\dev-project)
+.\deploy.ps1 -ProjectId "YOUR_GCP_PROJECT_ID"
+
+# Or preview changes first
+.\deploy.ps1 -ProjectId "YOUR_GCP_PROJECT_ID" -Preview
+```
+
+**How it works:** The script reads its own location in `Environment-Config` and automatically maps to the corresponding Terraform code in the `Playground` directory. No manual path configuration needed!
 
 ## Prerequisites
 

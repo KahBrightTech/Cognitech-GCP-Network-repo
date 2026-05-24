@@ -1,0 +1,137 @@
+# Infrastructure Manager deployment configuration
+# YAML Variables (anchors) - Define once, reuse throughout the file
+variables:
+  project_id: &project_id "dev-project-1430"
+  organization_id: &organization_id "43129013392"
+  location: &location "us-central1"
+  deployer_sa: &deployer_sa "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
+  terraform_subpath: &terraform_subpath "deplyment-Infra-Manger/cognitechllc/Playground/dev-project"
+
+  # User emails - Using Gmail accounts for testing (replace with cognitechllc.org once domain is set up)
+  dev_team_email: &dev_team_email "user:kbrigthain3@gmail.com"
+  platform_engineer_email: &platform_engineer_email "user:kbrigthain@gmail.com"
+  platform_team_email: &platform_team_email "bkargong200@gmail.com"
+
+deployment:
+  name: "cognitechllc-playground-dev-project"
+  location: *location
+
+serviceAccount: *deployer_sa
+
+terraformConfig:
+  gitSource:
+    repository: "https://github.com/KahBrightTech/Cognitech-GCP-Network-repo"
+    ref: "main"
+    # Points to actual Terraform code: Playground\dev-project (not Environment-Config)
+    subpath: *terraform_subpath
+
+  # Input variables for the deployment
+  inputVariables:
+    iam:
+      type: "object"
+      value:
+        project_id: *project_id
+        organization_id: *organization_id
+
+        # Custom roles with keys for easy referencing
+        custom_roles:
+          app_deployer:
+            role_id: "appDeployer"
+            title: "Application Deployer"
+            description: "Custom role for deploying applications with limited permissions"
+            permissions:
+            - "compute.instances.create"
+            - "compute.instances.delete"
+            - "compute.instances.start"
+            - "compute.instances.stop"
+            - "storage.buckets.get"
+            - "storage.objects.create"
+            - "storage.objects.delete"
+            stage: "GA"
+          network_viewer:
+            role_id: "networkViewer"
+            title: "Network Configuration Viewer"
+            description: "Read-only access to network configurations"
+            permissions:
+            - "compute.networks.get"
+            - "compute.networks.list"
+            - "compute.subnetworks.get"
+            - "compute.subnetworks.list"
+            - "compute.firewalls.get"
+            - "compute.firewalls.list"
+            stage: "GA"
+
+        # Service accounts with keys for easy referencing
+        service_accounts:
+          ci_cd:
+            account_id: "ci-cd-pipeline-sa"
+            display_name: "CI/CD Pipeline Service Account"
+            description: "Service account for automated CI/CD deployments"
+            project_id: *project_id
+            disabled: false
+          app_backend:
+            account_id: "app-backend-sa"
+            display_name: "Backend Application Service Account"
+            description: "Service account for backend application workloads"
+            project_id: *project_id
+            disabled: false
+
+        # Project-level IAM bindings using KEY REFERENCES
+        project_iam_bindings:
+          # Example: Assign custom role to user by referencing the role key
+          platform_engineer_deployer:
+            project_id: *project_id
+            role_key: "app_deployer" # References custom_roles["app_deployer"]
+            members:
+            - *platform_engineer_email # User gets custom deployer role
+          # Example: Assign custom role to service accounts using member_keys
+          backend_network_viewers:
+            project_id: *project_id
+            role_key: "network_viewer" # References custom_roles["network_viewer"]
+            member_keys:
+            - "app_backend" # References service_accounts["app_backend"]
+            - "ci_cd" # References service_accounts["ci_cd"]
+          # Example: Mix standard role with key-referenced service accounts
+          compute_viewers:
+            project_id: *project_id
+            role: "roles/compute.viewer" # Standard GCP role
+            members:
+            - *dev_team_email
+            member_keys:
+            - "app_backend" # Add SA by key
+
+        # Project-level IAM members using KEY REFERENCES
+        project_iam_members:
+          # Example: Assign custom role to user by key
+          dev_team_deployer:
+            project_id: *project_id
+            role_key: "app_deployer" # References custom_roles["app_deployer"]
+            member: *dev_team_email # Dev team gets custom deployer role
+          # Example: Assign custom role to service account by key
+          cicd_network_access:
+            project_id: *project_id
+            role_key: "network_viewer" # References custom_roles["network_viewer"]
+            member_key: "ci_cd" # References service_accounts["ci_cd"]
+          # Example: Standard role assignment
+          platform_editor:
+            project_id: *project_id
+            role: "roles/editor" # Standard role
+            member: *platform_engineer_email
+
+        # Organization and folder IAM (empty for dev project)
+        organization_iam_bindings: {}
+        folder_iam_bindings: {}
+  # Labels for organization and cost tracking
+labels:
+  environment: "playground"
+  account: "cognitechllc"
+  managed-by: "infrastructure-manager"
+  deployment-method: "gcloud-cli"
+  team: "platform-engineering"
+
+# Annotations for additional metadata
+annotations:
+  description: "Playground environment for testing organizational structure, IAM, and networking configurations"
+  owner: *platform_team_email
+  cost-center: "development"
+  compliance: "development-only"
