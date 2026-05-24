@@ -1,0 +1,41 @@
+# Infrastructure Manager deployment configuration
+# This file defines how Infrastructure Manager should deploy the configuration
+
+deployment:
+  name: "cognitechllc-playground-deployment"
+  location: "us-central1" # Region where deployment metadata is stored
+
+# Service account used for deployment
+# Must have appropriate permissions: roles/editor, roles/compute.networkAdmin, roles/resourcemanager.folderAdmin, etc.
+serviceAccount: "infra-deployer@cognitech-playground.iam.gserviceaccount.com"
+
+# Configuration source
+terraformConfig:
+  gitSource:
+    repository: "https://github.com/KahBrightTech/Cognitech-GCP-Network-repo"
+    ref: "main" # Can be branch, tag, or commit SHA
+    subpath: "deplyment-Infra-Manger/cognitechllc/Playground"
+  # Optional: You can also pass variables here instead of terraform.tfvars
+  # inputVariables:
+  #   org:
+  #     type: "object"
+  #     value:
+  #       folders:
+  #         playground:
+  #           display_name: "Playground"
+  #           parent: "organizations/123456789012"
+
+  # Labels for organization and cost tracking
+labels:
+  environment: "playground"
+  account: "cognitechllc"
+  managed-by: "infrastructure-manager"
+  deployment-method: "gcloud-cli"
+  team: "platform-engineering"
+
+# Annotations for additional metadata
+annotations:
+  description: "Playground environment for testing organizational structure, IAM, and networking configurations"
+  owner: "platform-team@cognitechllc.org"
+  cost-center: "development"
+  compliance: "development-only"
