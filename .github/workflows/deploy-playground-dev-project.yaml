@@ -8,7 +8,6 @@ on:
     paths:
       - ".github/workflows/deploy-playground-dev-project.yaml"
       - "deployments/cognitechllc/Playground/dev-project/**/*"
-      - "formations/tenant-projects/**/*"
   workflow_dispatch:
     inputs:
       infra_manager_action:
@@ -25,7 +24,7 @@ env:
   GCP_REGION: us-central1
   DEPLOYMENT_NAME: cognitechllc-playground-dev-project
 
-  WORKLOAD_IDENTITY_PROVIDER: "projects/dev-project-1430/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  WORKLOAD_IDENTITY_PROVIDER: "projects/277761075083/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
   SERVICE_ACCOUNT: "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
 
   # The repo + path that actually contains the .tf files AND the terraform.tfvars
