@@ -1,37 +1,26 @@
 # Infrastructure Manager deployment configuration
-# YAML Variables (anchors) - Define once, reuse throughout the file
-variables:
-  project_id: &project_id "dev-project-1430"
-  organization_id: &organization_id "43129013392"
-  location: &location "us-central1"
-  deployer_sa: &deployer_sa "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
-  terraform_subpath: &terraform_subpath "deplyment-Infra-Manger/cognitechllc/Playground/dev-project"
-
-  # User emails - Using Gmail accounts for testing (replace with cognitechllc.org once domain is set up)
-  dev_team_email: &dev_team_email "user:kbrigthain3@gmail.com"
-  platform_engineer_email: &platform_engineer_email "user:kbrigthain@gmail.com"
-  platform_team_email: &platform_team_email "bkargong200@gmail.com"
+# YAML anchors defined inline (Infrastructure Manager doesn't support root-level 'variables' section)
 
 deployment:
   name: "cognitechllc-playground-dev-project"
-  location: *location
+  location: "us-central1"
 
-serviceAccount: *deployer_sa
+serviceAccount: "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
 
 terraformConfig:
   gitSource:
     repository: "https://github.com/KahBrightTech/Cognitech-GCP-Network-repo"
     ref: "main"
     # Points to actual Terraform code: Playground\dev-project (not Environment-Config)
-    subpath: *terraform_subpath
+    subpath: "deplyment-Infra-Manger/cognitechllc/Playground/dev-project"
 
   # Input variables for the deployment
   inputVariables:
     iam:
       type: "object"
       value:
-        project_id: *project_id
-        organization_id: *organization_id
+        project_id: &project_id "dev-project-1430"
+        organization_id: "43129013392"
 
         # Custom roles with keys for easy referencing
         custom_roles:
@@ -83,7 +72,7 @@ terraformConfig:
             project_id: *project_id
             role_key: "app_deployer" # References custom_roles["app_deployer"]
             members:
-            - *platform_engineer_email # User gets custom deployer role
+            - &platform_engineer_email "user:kbrigthain@gmail.com" # User gets custom deployer role
           # Example: Assign custom role to service accounts using member_keys
           backend_network_viewers:
             project_id: *project_id
@@ -96,7 +85,7 @@ terraformConfig:
             project_id: *project_id
             role: "roles/compute.viewer" # Standard GCP role
             members:
-            - *dev_team_email
+            - &dev_team_email "user:kbrigthain3@gmail.com"
             member_keys:
             - "app_backend" # Add SA by key
 
@@ -132,6 +121,6 @@ labels:
 # Annotations for additional metadata
 annotations:
   description: "Playground environment for testing organizational structure, IAM, and networking configurations"
-  owner: *platform_team_email
+  owner: &platform_team_email "bkargong200@gmail.com"
   cost-center: "development"
   compliance: "development-only"

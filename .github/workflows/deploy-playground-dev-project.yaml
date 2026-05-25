@@ -1,0 +1,177 @@
+name: Deploy-Playground-Dev-Project
+
+on:
+  push:
+    branches:
+      - main
+      - "*"
+    paths:
+      - ".github/workflows/deploy-playground-dev-project.yaml"
+      - "deployments/Playground/dev-project/**/*"
+      - "formations/tenant-projects/**/*"
+  workflow_dispatch:
+    inputs:
+      infra_manager_action:
+        description: "Select the Infrastructure Manager action to perform"
+        required: true
+        type: choice
+        options:
+          - "preview"
+          - "apply"
+          - "destroy"
+
+env:
+  GCP_PROJECT_ID: dev-project-1430
+  GCP_REGION: us-central1
+  DEPLOYMENT_NAME: cognitechllc-playground-dev-project
+
+  WORKLOAD_IDENTITY_PROVIDER: "projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  SERVICE_ACCOUNT: "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
+
+  # The repo + path that actually contains the .tf files AND the terraform.tfvars
+  GIT_REPO: "https://github.com/KahBrightTech/Cognitech-GCP-Network-repo"
+  GIT_REF: "main"
+  GIT_DIRECTORY: "deployments/Playground/dev-project"
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  Preview:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: "access_token"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: "latest"
+
+      - name: Set GCP project
+        run: gcloud config set project ${{ env.GCP_PROJECT_ID }}
+
+      - name: Preview Infrastructure Manager deployment
+        run: |
+          echo "🔍 Running Infrastructure Manager preview..."
+          gcloud infra-manager previews create \
+            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/previews/preview-${{ github.run_id }} \
+            --deployment="projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }}" \
+            --service-account="projects/${{ env.GCP_PROJECT_ID }}/serviceAccounts/${{ env.SERVICE_ACCOUNT }}" \
+            --git-source-repo="${{ env.GIT_REPO }}" \
+            --git-source-directory="${{ env.GIT_DIRECTORY }}" \
+            --git-source-ref="${{ env.GIT_REF }}" \
+            --format=json || echo "Preview completed (may show diffs)."
+
+  Approve:
+    needs: Preview
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.infra_manager_action == 'apply' &&
+      github.ref == 'refs/heads/main'
+    environment:
+      name: production
+    steps:
+      - name: Awaiting approval before applying changes
+        run: echo "✅ Approved by ${{ github.actor }}"
+
+  Apply:
+    needs: Approve
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.infra_manager_action == 'apply' &&
+      github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: "access_token"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: "latest"
+
+      - name: Set GCP project
+        run: gcloud config set project ${{ env.GCP_PROJECT_ID }}
+
+      - name: Apply Infrastructure Manager deployment
+        run: |
+          echo "🚀 Applying infrastructure changes..."
+          gcloud infra-manager deployments apply \
+            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }} \
+            --service-account="projects/${{ env.GCP_PROJECT_ID }}/serviceAccounts/${{ env.SERVICE_ACCOUNT }}" \
+            --git-source-repo="${{ env.GIT_REPO }}" \
+            --git-source-directory="${{ env.GIT_DIRECTORY }}" \
+            --git-source-ref="${{ env.GIT_REF }}" \
+            --labels="environment=playground,managed-by=github-actions,applied-by=${{ github.actor }}" \
+            --format=json
+          echo "✅ Applied."
+
+      - name: Get deployment details
+        if: always()
+        run: |
+          gcloud infra-manager deployments describe \
+            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }} \
+            --format=yaml
+
+  Destroy:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.infra_manager_action == 'destroy' &&
+      github.ref == 'refs/heads/main'
+    environment:
+      name: production-destroy
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          token_format: "access_token"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: "latest"
+
+      - name: Set GCP project
+        run: gcloud config set project ${{ env.GCP_PROJECT_ID }}
+
+      - name: Destroy Infrastructure Manager deployment
+        run: |
+          echo "🗑️ Destroying infrastructure..."
+          gcloud infra-manager deployments delete \
+            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }} \
+            --delete-policy=DELETE \
+            --quiet
+          echo "✅ Destroyed."
