@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------
 
 module "playground_dev" {
-  source = "../../../formations/tenant-projects"
+  source = "../../../../formations/tenant-projects"
 
   # Pass IAM configuration to the formation
   iam = var.iam
