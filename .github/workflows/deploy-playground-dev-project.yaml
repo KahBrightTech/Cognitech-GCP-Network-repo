@@ -7,7 +7,7 @@ on:
       - "*"
     paths:
       - ".github/workflows/deploy-playground-dev-project.yaml"
-      - "deployments/Playground/dev-project/**/*"
+      - "deployments/cognitechllc/Playground/dev-project/**/*"
       - "formations/tenant-projects/**/*"
   workflow_dispatch:
     inputs:
@@ -25,13 +25,13 @@ env:
   GCP_REGION: us-central1
   DEPLOYMENT_NAME: cognitechllc-playground-dev-project
 
-  WORKLOAD_IDENTITY_PROVIDER: "projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+  WORKLOAD_IDENTITY_PROVIDER: "projects/dev-project-1430/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
   SERVICE_ACCOUNT: "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
 
   # The repo + path that actually contains the .tf files AND the terraform.tfvars
   GIT_REPO: "https://github.com/KahBrightTech/Cognitech-GCP-Network-repo"
   GIT_REF: "main"
-  GIT_DIRECTORY: "deployments/Playground/dev-project"
+  GIT_DIRECTORY: "deployments/cognitechllc/Playground/dev-project"
 
 permissions:
   contents: read

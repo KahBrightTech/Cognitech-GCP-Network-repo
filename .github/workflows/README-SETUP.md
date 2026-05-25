@@ -297,7 +297,7 @@ env:
   GCP_PROJECT_ID: "dev-project-1430"
   GCP_REGION: "us-central1"
   DEPLOYMENT_NAME: "cognitechllc-playground-dev-project"
-  GIT_DIRECTORY: "deployments/Playground/dev-project"
+  GIT_DIRECTORY: "deployments/cognitechllc/Playground/dev-project"
   WORKLOAD_IDENTITY_PROVIDER: "projects/YOUR_PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/providers/github-provider"  # <-- UPDATE THIS
   SERVICE_ACCOUNT: "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
 ```
