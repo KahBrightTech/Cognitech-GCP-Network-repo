@@ -64,16 +64,69 @@ jobs:
         run: gcloud config set project ${{ env.GCP_PROJECT_ID }}
 
       - name: Preview Infrastructure Manager deployment
+        id: preview
         run: |
           echo "🔍 Running Infrastructure Manager preview..."
-          gcloud infra-manager previews create \
-            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/previews/preview-${{ github.run_id }} \
+          
+          PREVIEW_NAME="preview-${{ github.run_id }}"
+          PREVIEW_PATH="projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/previews/${PREVIEW_NAME}"
+          
+          # Create the preview
+          gcloud infra-manager previews create ${PREVIEW_PATH} \
             --deployment="projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }}" \
             --service-account="projects/${{ env.GCP_PROJECT_ID }}/serviceAccounts/${{ env.SERVICE_ACCOUNT }}" \
             --git-source-repo="${{ env.GIT_REPO }}" \
             --git-source-directory="${{ env.GIT_DIRECTORY }}" \
             --git-source-ref="${{ env.GIT_REF }}" \
-            --format=json || echo "Preview completed (may show diffs)."
+            --format=json
+          
+          echo "⏳ Waiting for preview to complete..."
+          for i in {1..30}; do
+            STATE=$(gcloud infra-manager previews describe ${PREVIEW_PATH} --format="value(state)" 2>/dev/null || echo "UNKNOWN")
+            echo "Preview state: $STATE"
+            
+            if [[ "$STATE" == "SUCCEEDED" ]]; then
+              echo "✅ Preview completed successfully!"
+              break
+            elif [[ "$STATE" == "FAILED" ]]; then
+              echo "❌ Preview failed!"
+              gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml
+              exit 1
+            fi
+            
+            sleep 10
+          done
+          
+          echo "preview_path=${PREVIEW_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Export and display Terraform plan
+        if: always()
+        run: |
+          echo "📋 Fetching Terraform plan output..."
+          
+          PREVIEW_PATH="${{ steps.preview.outputs.preview_path }}"
+          
+          # Export the preview to get the plan
+          gcloud infra-manager previews export ${PREVIEW_PATH} \
+            --format=json > preview_result.json || true
+          
+          # Display the preview details
+          echo "=== Preview Details ==="
+          gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml || true
+          
+          # Try to get the Terraform plan logs
+          echo ""
+          echo "=== Terraform Plan Output ==="
+          if [ -f preview_result.json ]; then
+            cat preview_result.json | jq -r '.result // "No plan output available"'
+          fi
+          
+          # Alternative: Check for plan in deployment logs
+          echo ""
+          echo "=== Checking Deployment Status ==="
+          gcloud infra-manager deployments describe \
+            projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }} \
+            --format=yaml 2>/dev/null || echo "Deployment not yet created"
 
   Approve:
     needs: Preview
