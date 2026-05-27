@@ -57,7 +57,7 @@ iam = {
       disabled     = false
     }
     web_backend = {
-      account_id   = "app-backend-sa"
+      account_id   = "web-backend-sa"
       display_name = "Backend Application Service Account"
       description  = "Service account for backend application workloads"
       project_id   = "dev-project-1430"
