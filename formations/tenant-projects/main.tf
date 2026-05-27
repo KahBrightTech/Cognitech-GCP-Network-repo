@@ -14,6 +14,9 @@
 #--------------------------------------------------------------------
 locals {
   effective_project_id = trimspace(coalesce(var.iam.project_id, var.common.project_id, ""))
+  effective_labels = merge(coalesce(var.common.labels, {}), {
+    managed_by = "terraform"
+  })
 
   custom_role_alias_to_id = var.iam.custom_roles != null ? {
     for k, role in var.iam.custom_roles :
@@ -199,5 +202,11 @@ module "iam" {
 
 module "gcs" {
   source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.3"
-  s3     = var.s3
+  s3 = merge(var.s3, {
+    buckets = var.s3.buckets != null ? {
+      for bucket_key, bucket in var.s3.buckets : bucket_key => merge(bucket, {
+        labels = merge(coalesce(bucket.labels, {}), local.effective_labels)
+      })
+    } : {}
+  })
 }

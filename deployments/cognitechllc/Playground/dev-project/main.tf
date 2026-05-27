@@ -11,6 +11,14 @@ module "playground_dev" {
       project_id = coalesce(var.iam.project_id, var.common.project_id)
     }
   )
-  gcs = var.s3
+  common = merge(
+    var.common,
+    {
+      labels = merge(coalesce(var.common.labels, {}), {
+        managed_by = "terraform"
+      })
+    }
+  )
+  s3 = var.s3
 }
 
