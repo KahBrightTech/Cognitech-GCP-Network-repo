@@ -153,7 +153,7 @@ s3 = {
       iam_members = {
         infra_manager_sa = {
           role   = "roles/storage.admin"
-          member = "infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
+          member = "serviceAccount:infra-manager-sa@dev-project-1430.iam.gserviceaccount.com"
         }
       }
     }
