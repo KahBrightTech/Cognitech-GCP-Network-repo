@@ -132,7 +132,42 @@ jobs:
           echo ""
           echo "=== Terraform Plan Output ==="
           if [ -f preview_result.json ]; then
-            cat preview_result.json | jq -r '.result // "No plan output available"'
+            cat preview_result.json
+
+            JSON_PLAN_URI=$(jq -r '.jsonSignedUri // empty' preview_result.json)
+            if [[ -n "${JSON_PLAN_URI}" ]]; then
+              echo ""
+              echo "Downloading plan JSON from signed URL..."
+              curl -sSL "${JSON_PLAN_URI}" -o plan.json
+
+              echo ""
+              echo "=== Terraform Plan Summary ==="
+              jq -r '
+                if (.resource_changes // [] | length) == 0 then
+                  "No resource changes."
+                else
+                  (
+                    .resource_changes
+                    | map(.change.actions | join("/"))
+                    | group_by(.)
+                    | map({action: .[0], count: length})
+                    | .[]
+                    | "\(.action): \(.count)"
+                  )
+                end
+              ' plan.json
+
+              echo ""
+              echo "=== Resource Changes (address -> actions) ==="
+              jq -r '
+                (.resource_changes // [])[]
+                | "\(.address) -> \(.change.actions | join("/"))"
+              ' plan.json
+            else
+              echo "No jsonSignedUri found in preview export output."
+            fi
+          else
+            echo "preview_result.json was not generated."
           fi
           
           # Alternative: Check for plan in deployment logs
