@@ -19,7 +19,9 @@ module "playground_dev" {
       })
     }
   )
-  s3 = var.s3
+  s3 = merge(var.s3, {
+    buckets = coalesce(var.s3.buckets, {})
+  })
 }
 
 
