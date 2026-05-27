@@ -6,7 +6,6 @@
 module "playground_dev" {
   source = "../../../../formations/tenant-projects"
   # Pass IAM configuration to the formation
-
   iam = var.iam
   # Uncomment to pass org configuration when needed
   # org = var.org
