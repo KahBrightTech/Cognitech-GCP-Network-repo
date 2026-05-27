@@ -1,6 +1,6 @@
 # Terraform files with sensitive data
-*.tfvars
-*.tfvars.json
+# *.tfvars
+# *.tfvars.json
 
 # Terraform state files (contain sensitive data)
 *.tfstate
