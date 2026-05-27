@@ -50,7 +50,7 @@ variable "iam" {
 
     # Project-level IAM bindings
     project_iam_bindings = optional(map(object({
-      project_id  = string
+      project_id  = optional(string)
       role        = optional(string)           # Standard role like "roles/viewer" OR custom role key from custom_roles
       role_key    = optional(string)           # Reference to custom_roles map key (alternative to role)
       members     = optional(list(string), []) # List of members: "user:...", "serviceAccount:...", or "@sa_key"
