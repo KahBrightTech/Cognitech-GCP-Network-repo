@@ -7,7 +7,6 @@ iam = {
   project_id      = "dev-project-1430"
   organization_id = "43129013392"
 
-
   # Custom IAM roles with keys for cross-referencing
   custom_roles = {
     app_deployer = {
@@ -57,6 +56,13 @@ iam = {
       project_id   = "dev-project-1430"
       disabled     = false
     }
+    web_backend = {
+      account_id   = "app-backend-sa"
+      display_name = "Backend Application Service Account"
+      description  = "Service account for backend application workloads"
+      project_id   = "dev-project-1430"
+      disabled     = false
+    }
   }
 
   # Project-level IAM bindings (assigns roles to multiple members at once)
@@ -75,7 +81,8 @@ iam = {
       role_key   = "network_viewer" # References custom_roles["network_viewer"]
       member_keys = [
         "app_backend", # References service_accounts["app_backend"]
-        "ci_cd"        # References service_accounts["ci_cd"]
+        "ci_cd",       # References service_accounts["ci_cd"]
+        "web_backend"  # References service_accounts["web_backend"]
       ]
     }
     # Assign standard compute.viewer role to user and service account
@@ -92,32 +99,26 @@ iam = {
   }
 
   # Project-level IAM members (assigns roles to individual members)
-  project_iam_members = {
+  project_iam_members = [
     # Assign custom app_deployer role to dev team user
-    dev_team_deployer = {
+    {
       project_id = "dev-project-1430"
       role_key   = "app_deployer" # References custom_roles["app_deployer"]
       member     = "user:kbrigthain3@gmail.com"
-    }
+    },
     # Assign custom network_viewer role to CI/CD service account
-    cicd_network_viewer = {
+    {
       project_id = "dev-project-1430"
       role_key   = "network_viewer" # References custom_roles["network_viewer"]
       member_key = "ci_cd"          # References service_accounts["ci_cd"]
-    }
+    },
     # Assign standard editor role to platform engineer
-    platform_engineer_editor = {
+    {
       project_id = "dev-project-1430"
       role       = "roles/editor" # Standard GCP role
       member     = "user:kbrigthain@gmail.com"
     }
-    # Test entry to verify create actions appear in preview/apply output
-    platform_engineer_logging_viewer = {
-      project_id = "dev-project-1430"
-      role       = "roles/logging.viewer"
-      member     = "user:kbrigthain@gmail.com"
-    }
-  }
+  ]
 
   # Organization and folder IAM bindings (empty for dev environment)
   organization_iam_bindings = {}

@@ -20,8 +20,8 @@ on:
           - "destroy"
 
 env:
-  GCP_PROJECT_ID: dev-project-1430
-  GCP_REGION: us-central1
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: "us-central1"
   DEPLOYMENT_NAME: cognitechllc-playground-dev-project
 
   WORKLOAD_IDENTITY_PROVIDER: "projects/277761075083/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider"
