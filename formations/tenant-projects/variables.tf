@@ -96,6 +96,26 @@ variable "iam" {
       stage       = optional(string, "GA")
     })), {})
 
+    # IAM binding conditions keyed by role
+    iam_binding_conditions = optional(map(object({
+      title       = string
+      description = optional(string)
+      expression  = string
+    })), {})
+
+    # Service account IAM bindings
+    service_account_iam_bindings = optional(map(object({
+      service_account_key = string
+      role                = string
+      members             = list(string)
+    })), {})
+
+    # Optional service account key creation config keyed by service account key
+    create_service_account_keys = optional(map(object({
+      key_algorithm   = optional(string)
+      public_key_type = optional(string)
+    })), {})
+
     # Organization-level IAM
     organization_iam_bindings = optional(map(object({
       role    = string
@@ -110,9 +130,12 @@ variable "iam" {
     })), {})
   })
   default = {
-    project_iam_bindings = {}
-    project_iam_members  = {}
-    service_accounts     = {}
-    custom_roles         = {}
+    project_iam_bindings         = {}
+    project_iam_members          = {}
+    service_accounts             = {}
+    custom_roles                 = {}
+    iam_binding_conditions       = {}
+    service_account_iam_bindings = {}
+    create_service_account_keys  = {}
   }
 }

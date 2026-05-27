@@ -18,6 +18,11 @@ locals {
     coalesce(role.key, k) => role.role_id
   } : {}
 
+  service_account_alias_to_account_id = var.iam.service_accounts != null ? {
+    for k, sa in var.iam.service_accounts :
+    coalesce(sa.key, k) => sa.account_id
+  } : {}
+
   service_account_alias_to_email = var.iam.service_accounts != null ? {
     for k, sa in var.iam.service_accounts :
     coalesce(sa.key, k) => "serviceAccount:${sa.account_id}@${coalesce(sa.project_id, var.iam.project_id)}.iam.gserviceaccount.com"
@@ -141,12 +146,29 @@ module "iam" {
         }
       } : {}
 
-      # Fields required by the upstream IAM module that this formation
-      # does not expose yet. Pass empty maps so the upstream for_each
-      # and index expressions receive a map instead of null.
-      iam_binding_conditions       = {}
-      service_account_iam_bindings = {}
-      create_service_account_keys  = {}
+      # Pass through optional fields with safe defaults for upstream for_each usage.
+      iam_binding_conditions = var.iam.iam_binding_conditions != null ? {
+        for key, condition in var.iam.iam_binding_conditions :
+        key => {
+          title       = condition.title
+          description = coalesce(condition.description, "")
+          expression  = condition.expression
+        }
+      } : {}
+
+      service_account_iam_bindings = var.iam.service_account_iam_bindings != null ? {
+        for key, binding in var.iam.service_account_iam_bindings :
+        key => {
+          service_account_key = contains(keys(local.service_account_alias_to_account_id), binding.service_account_key) ? local.service_account_alias_to_account_id[binding.service_account_key] : binding.service_account_key
+          role                = binding.role
+          members             = binding.members
+        }
+      } : {}
+
+      create_service_account_keys = var.iam.create_service_account_keys != null ? {
+        for key, cfg in var.iam.create_service_account_keys :
+        (contains(keys(local.service_account_alias_to_account_id), key) ? local.service_account_alias_to_account_id[key] : key) => cfg
+      } : {}
     }
   )
 

@@ -134,7 +134,7 @@ jobs:
           if [ -f preview_result.json ]; then
             cat preview_result.json
 
-            JSON_PLAN_URI=$(jq -r '.jsonSignedUri // empty' preview_result.json)
+            JSON_PLAN_URI=$(jq -r '.result.jsonSignedUri // .jsonSignedUri // empty' preview_result.json)
             if [[ -n "${JSON_PLAN_URI}" ]]; then
               echo ""
               echo "Downloading plan JSON from signed URL..."
@@ -158,13 +158,41 @@ jobs:
               ' plan.json
 
               echo ""
+              echo "=== Resource Creation Summary ==="
+              jq -r '
+                (
+                  .resource_changes // []
+                  | map(select(.change.actions | index("create")))
+                ) as $creates
+                | if ($creates | length) == 0 then
+                    "No resources will be created."
+                  else
+                    "Resources with create action: \($creates | length)"
+                  end
+              ' plan.json
+
+              echo ""
+              echo "=== Resources To Be Created ==="
+              jq -r '
+                (
+                  .resource_changes // []
+                  | map(select(.change.actions | index("create")))
+                ) as $creates
+                | if ($creates | length) == 0 then
+                    "None"
+                  else
+                    $creates[] | "\(.address) -> \(.change.actions | join("/"))"
+                  end
+              ' plan.json
+
+              echo ""
               echo "=== Resource Changes (address -> actions) ==="
               jq -r '
                 (.resource_changes // [])[]
                 | "\(.address) -> \(.change.actions | join("/"))"
               ' plan.json
             else
-              echo "No jsonSignedUri found in preview export output."
+              echo "No jsonSignedUri found in preview export output (checked .result.jsonSignedUri and .jsonSignedUri)."
             fi
           else
             echo "preview_result.json was not generated."
