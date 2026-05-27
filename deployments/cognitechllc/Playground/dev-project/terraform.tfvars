@@ -126,12 +126,12 @@ iam = {
 }
 
 s3 = {
-  project_id = "my-gcp-project-id"
+  project_id = "dev-project-1430"
   location   = "us-central1"
 
   buckets = {
     tfstate = {
-      name                        = "my-gcp-project-id-us-central1-state-1234"
+      name                        = "dev-project-1430-us-central1-state-1234"
       storage_class               = "STANDARD"
       force_destroy               = false
       uniform_bucket_level_access = true
@@ -159,7 +159,7 @@ s3 = {
     }
 
     app_assets = {
-      name               = "my-gcp-project-id-assets-1234"
+      name               = "dev-project-1430-assets-1234"
       storage_class      = "STANDARD"
       versioning_enabled = false
 
