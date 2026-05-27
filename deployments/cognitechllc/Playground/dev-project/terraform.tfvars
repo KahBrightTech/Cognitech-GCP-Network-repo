@@ -99,26 +99,26 @@ iam = {
   }
 
   # Project-level IAM members (assigns roles to individual members)
-  project_iam_members = [
+  project_iam_members = {
     # Assign custom app_deployer role to dev team user
-    {
+    dev_team_app_deployer = {
       project_id = "dev-project-1430"
       role_key   = "app_deployer" # References custom_roles["app_deployer"]
       member     = "user:kbrigthain3@gmail.com"
-    },
+    }
     # Assign custom network_viewer role to CI/CD service account
-    {
+    ci_cd_network_viewer = {
       project_id = "dev-project-1430"
       role_key   = "network_viewer" # References custom_roles["network_viewer"]
       member_key = "ci_cd"          # References service_accounts["ci_cd"]
-    },
+    }
     # Assign standard editor role to platform engineer
-    {
+    platform_engineer_editor = {
       project_id = "dev-project-1430"
       role       = "roles/editor" # Standard GCP role
       member     = "user:kbrigthain@gmail.com"
     }
-  ]
+  }
 
   # Organization and folder IAM bindings (empty for dev environment)
   organization_iam_bindings = {}
