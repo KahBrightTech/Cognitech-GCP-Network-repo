@@ -1,5 +1,19 @@
 # Input variables for the deployment
 
+variable "common" {
+  description = "Common configuration shared across modules"
+  type = object({
+    project_id = optional(string)
+    region     = optional(string)
+    labels     = optional(map(string))
+  })
+  default = {
+    project_id = null
+    region     = "us-central1"
+    labels     = {}
+  }
+}
+
 # variable "org" {
 #   description = "Organization structure configuration including folders and projects"
 #   type = object({

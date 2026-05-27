@@ -2,6 +2,15 @@
 # Generated from: deplyment-Infra-Manger/cognitechllc/Environment-Config/Playgroud/dev-project/deployment-config.yaml
 # This file contains the actual variable values for the IAM module deployment
 
+common = {
+  project_id = "dev-project-1430"
+  region     = "us-central1"
+  labels = {
+    environment = "dev"
+    tenant      = "cognitechllc"
+  }
+}
+
 iam = {
   # Project and Organization IDs
   project_id      = "dev-project-1430"

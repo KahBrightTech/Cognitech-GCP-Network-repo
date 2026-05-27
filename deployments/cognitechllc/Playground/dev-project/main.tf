@@ -5,6 +5,11 @@
 
 module "playground_dev" {
   source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Network-repo.git//formations/tenant-projects?ref=main"
-  iam    = var.iam
+  iam = merge(
+    var.iam,
+    {
+      project_id = coalesce(var.iam.project_id, var.common.project_id)
+    }
+  )
 }
 
