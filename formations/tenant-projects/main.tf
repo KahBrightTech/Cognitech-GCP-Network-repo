@@ -201,7 +201,7 @@ module "iam" {
 
 
 module "gcs" {
-  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.3"
+  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.4"
   s3 = merge(var.s3, {
     buckets = var.s3.buckets != null ? {
       for bucket_key, bucket in var.s3.buckets : bucket_key => merge(bucket, {
