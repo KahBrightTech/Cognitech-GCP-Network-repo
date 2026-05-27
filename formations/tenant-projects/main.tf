@@ -13,6 +13,8 @@
 # Supports key-based cross-referencing between resources
 #--------------------------------------------------------------------
 locals {
+  effective_project_id = trimspace(coalesce(var.iam.project_id, var.common.project_id, ""))
+
   custom_role_alias_to_id = var.iam.custom_roles != null ? {
     for k, role in var.iam.custom_roles :
     coalesce(role.key, k) => role.role_id
@@ -25,7 +27,7 @@ locals {
 
   service_account_alias_to_email = var.iam.service_accounts != null ? {
     for k, sa in var.iam.service_accounts :
-    coalesce(sa.key, k) => "serviceAccount:${sa.account_id}@${coalesce(sa.project_id, var.iam.project_id)}.iam.gserviceaccount.com"
+    coalesce(sa.key, k) => "serviceAccount:${sa.account_id}@${coalesce(sa.project_id, local.effective_project_id)}.iam.gserviceaccount.com"
   } : {}
 }
 
@@ -35,6 +37,8 @@ module "iam" {
   iam = merge(
     var.iam,
     {
+      project_id = local.effective_project_id
+
       # Upstream IAM module expects custom role map keys as role_id.
       custom_roles = var.iam.custom_roles != null ? {
         for _, role in var.iam.custom_roles :
@@ -62,11 +66,11 @@ module "iam" {
           for _, binding in var.iam.project_iam_bindings : (
             binding.role_key != null ? (
               contains(keys(local.custom_role_alias_to_id), binding.role_key)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
               : binding.role_key
               ) : (
               binding.role != null && contains(keys(local.custom_role_alias_to_id), binding.role)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
               : binding.role
             )
           )
@@ -79,11 +83,11 @@ module "iam" {
             (
               binding.role_key != null ? (
                 contains(keys(local.custom_role_alias_to_id), binding.role_key)
-                ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
+                ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
                 : binding.role_key
                 ) : (
                 binding.role != null && contains(keys(local.custom_role_alias_to_id), binding.role)
-                ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
+                ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
                 : binding.role
               )
             ) == resolved_role
@@ -107,11 +111,11 @@ module "iam" {
           {
             role = member_obj.role_key != null ? (
               contains(keys(local.custom_role_alias_to_id), member_obj.role_key)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[member_obj.role_key]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[member_obj.role_key]}"
               : member_obj.role_key
               ) : (
               member_obj.role != null && contains(keys(local.custom_role_alias_to_id), member_obj.role)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[member_obj.role]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[member_obj.role]}"
               : member_obj.role
             )
             member = member_obj.member_key != null ? (
@@ -153,11 +157,11 @@ module "iam" {
           for _, binding in var.iam.project_iam_bindings : (
             binding.role_key != null ? (
               contains(keys(local.custom_role_alias_to_id), binding.role_key)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
               : binding.role_key
               ) : (
               binding.role != null && contains(keys(local.custom_role_alias_to_id), binding.role)
-              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
+              ? "projects/${local.effective_project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
               : binding.role
             )
           )
@@ -190,4 +194,10 @@ module "iam" {
 
   # Ensure IAM is applied after org resources are created
   # depends_on = [module.org]
+}
+
+
+module "gcs" {
+  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.3"
+  s3     = var.s3
 }

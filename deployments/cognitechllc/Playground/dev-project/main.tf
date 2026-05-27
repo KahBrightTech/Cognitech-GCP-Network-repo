@@ -11,5 +11,6 @@ module "playground_dev" {
       project_id = coalesce(var.iam.project_id, var.common.project_id)
     }
   )
+  gcs = var.s3
 }
 
