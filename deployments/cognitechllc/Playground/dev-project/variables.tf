@@ -179,7 +179,6 @@ variable "s3" {
       })))
     })))
   })
-
   default = {
     project_id = ""
     location   = "us-central1"

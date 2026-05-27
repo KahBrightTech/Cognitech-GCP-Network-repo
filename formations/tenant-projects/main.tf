@@ -35,7 +35,7 @@ locals {
 }
 
 module "iam" {
-  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/IAM?ref=v1.0.0"
+  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/IAM?ref=v1.0.5"
 
   iam = merge(
     var.iam,
@@ -201,7 +201,7 @@ module "iam" {
 
 
 module "gcs" {
-  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.4"
+  source = "git::https://github.com/KahBrightTech/Cognitech-GCP-Infrastructure-Manager-repo.git//Infrastructure-Manger/modules/gcs?ref=v1.0.5"
   s3 = merge(var.s3, {
     buckets = {
       for bucket_key, bucket in coalesce(var.s3.buckets, {}) : bucket_key => merge(bucket, {
