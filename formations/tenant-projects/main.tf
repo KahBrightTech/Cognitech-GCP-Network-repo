@@ -140,6 +140,13 @@ module "iam" {
           members   = binding.members
         }
       } : {}
+
+      # Fields required by the upstream IAM module that this formation
+      # does not expose yet. Pass empty maps so the upstream for_each
+      # and index expressions receive a map instead of null.
+      iam_binding_conditions       = {}
+      service_account_iam_bindings = {}
+      create_service_account_keys  = {}
     }
   )
 

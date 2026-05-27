@@ -87,7 +87,6 @@ jobs:
           if [[ "$CREATE_EXIT" -ne 0 ]]; then
             echo "❌ previews create failed; dumping preview diagnostics..."
             gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml || true
-            gcloud infra-manager previews export ${PREVIEW_PATH} --format=json || true
             exit $CREATE_EXIT
           fi
           
@@ -102,7 +101,6 @@ jobs:
             elif [[ "$STATE" == "FAILED" ]]; then
               echo "❌ Preview failed!"
               gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml
-              gcloud infra-manager previews export ${PREVIEW_PATH} --format=json || true
               exit 1
             fi
             
@@ -115,10 +113,16 @@ jobs:
           echo "📋 Fetching Terraform plan output..."
           
           PREVIEW_PATH="${{ steps.preview.outputs.preview_path }}"
+          PREVIEW_STATE=$(gcloud infra-manager previews describe ${PREVIEW_PATH} --format="value(state)" 2>/dev/null || echo "UNKNOWN")
+          echo "Preview state for export: ${PREVIEW_STATE}"
           
-          # Export the preview to get the plan
-          gcloud infra-manager previews export ${PREVIEW_PATH} \
-            --format=json > preview_result.json || true
+          # Export only works for SUCCEEDED or STALE previews.
+          if [[ "${PREVIEW_STATE}" == "SUCCEEDED" || "${PREVIEW_STATE}" == "STALE" ]]; then
+            gcloud infra-manager previews export ${PREVIEW_PATH} \
+              --format=json > preview_result.json || true
+          else
+            echo "Skipping preview export because state is ${PREVIEW_STATE}."
+          fi
           
           # Display the preview details
           echo "=== Preview Details ==="
