@@ -70,8 +70,10 @@ jobs:
           
           PREVIEW_NAME="preview-${{ github.run_id }}"
           PREVIEW_PATH="projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/previews/${PREVIEW_NAME}"
+          echo "preview_path=${PREVIEW_PATH}" >> $GITHUB_OUTPUT
           
           # Create the preview
+          set +e
           gcloud infra-manager previews create ${PREVIEW_PATH} \
             --deployment="projects/${{ env.GCP_PROJECT_ID }}/locations/${{ env.GCP_REGION }}/deployments/${{ env.DEPLOYMENT_NAME }}" \
             --service-account="projects/${{ env.GCP_PROJECT_ID }}/serviceAccounts/${{ env.SERVICE_ACCOUNT }}" \
@@ -79,6 +81,15 @@ jobs:
             --git-source-directory="${{ env.GIT_DIRECTORY }}" \
             --git-source-ref="${{ env.GIT_REF }}" \
             --format=json
+          CREATE_EXIT=$?
+          set -e
+
+          if [[ "$CREATE_EXIT" -ne 0 ]]; then
+            echo "❌ previews create failed; dumping preview diagnostics..."
+            gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml || true
+            gcloud infra-manager previews export ${PREVIEW_PATH} --format=json || true
+            exit $CREATE_EXIT
+          fi
           
           echo "⏳ Waiting for preview to complete..."
           for i in {1..30}; do
@@ -91,13 +102,12 @@ jobs:
             elif [[ "$STATE" == "FAILED" ]]; then
               echo "❌ Preview failed!"
               gcloud infra-manager previews describe ${PREVIEW_PATH} --format=yaml
+              gcloud infra-manager previews export ${PREVIEW_PATH} --format=json || true
               exit 1
             fi
             
             sleep 10
           done
-          
-          echo "preview_path=${PREVIEW_PATH}" >> $GITHUB_OUTPUT
 
       - name: Export and display Terraform plan
         if: always()
