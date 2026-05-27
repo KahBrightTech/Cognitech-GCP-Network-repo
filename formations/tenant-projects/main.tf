@@ -146,13 +146,29 @@ module "iam" {
         }
       } : {}
 
-      # Pass through optional fields with safe defaults for upstream for_each usage.
-      iam_binding_conditions = var.iam.iam_binding_conditions != null ? {
-        for key, condition in var.iam.iam_binding_conditions :
-        key => {
-          title       = condition.title
-          description = coalesce(condition.description, "")
-          expression  = condition.expression
+      # Upstream module indexes condition map by every binding role key.
+      # Populate all role keys to avoid invalid index errors when a binding has no condition.
+      iam_binding_conditions = var.iam.project_iam_bindings != null ? {
+        for resolved_role in distinct([
+          for _, binding in var.iam.project_iam_bindings : (
+            binding.role_key != null ? (
+              contains(keys(local.custom_role_alias_to_id), binding.role_key)
+              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role_key]}"
+              : binding.role_key
+              ) : (
+              binding.role != null && contains(keys(local.custom_role_alias_to_id), binding.role)
+              ? "projects/${var.iam.project_id}/roles/${local.custom_role_alias_to_id[binding.role]}"
+              : binding.role
+            )
+          )
+          if(
+            binding.role_key != null ? binding.role_key : binding.role
+          ) != null
+        ]) :
+        resolved_role => {
+          title       = "default_allow_all"
+          description = "Compatibility condition for upstream IAM module"
+          expression  = "true"
         }
       } : {}
 
